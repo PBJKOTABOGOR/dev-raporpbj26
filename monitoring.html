@@ -893,48 +893,47 @@
       return (Number(tahun || 0) * 100) + (map[bulan] || 0);
     }
 
-    function groupRealisasi(realRows){
-      const grouped = {};
+function groupRealisasi(realRows){
+  const grouped = {};
 
-      realRows.forEach(r => {
-        const kode = String(r.kode_rup || '').trim();
-        if (!kode) return;
+  realRows.forEach(r => {
+    const kode = String(r.kode_rup || '').trim();
+    if (!kode) return;
 
-        if (!grouped[kode]) {
-          grouped[kode] = {
-            recall_paket: 0,
-            total_realisasi: 0,
-            rows: []
-          };
-        }
-
-        const nilai = parseMoney(
-          r.nilai_realisasi ||
-          r['total_nilai_(rp)' ||
-          r.total_nilai ||
-          r.nilai_transaksi ||
-          r.nilai_paket ||
-          0
-        );
-
-        grouped[kode].recall_paket += 1;
-        grouped[kode].total_realisasi += nilai;
-
-        grouped[kode].rows.push({
-          kode_paket: String(r.kode_paket || '').trim(),
-          nama_paket: String(r.nama_paket || '').trim(),
-          nama_penyedia: String(r.nama_penyedia || '').trim(),
-          satuan_kerja: String(r.nama_satuan_kerja || r.satuan_kerja || '').trim(),
-          metode: String(r.metode_pengadaan || '').trim(),
-          status_paket: String(r.status_paket || '').trim(),
-          sumber: String(r.sumber_transaksi || '').trim(),
-          nilai: nilai
-        });
-      });
-
-      return grouped;
+    if (!grouped[kode]) {
+      grouped[kode] = {
+        recall_paket: 0,
+        total_realisasi: 0,
+        rows: []
+      };
     }
 
+    const nilai = parseMoney(
+      r.nilai_realisasi ||
+      r['total_nilai_(rp)'] ||
+      r.total_nilai ||
+      r.nilai_transaksi ||
+      r.nilai_paket ||
+      0
+    );
+
+    grouped[kode].recall_paket += 1;
+    grouped[kode].total_realisasi += nilai;
+
+    grouped[kode].rows.push({
+      kode_paket: String(r.kode_paket || '').trim(),
+      nama_paket: String(r.nama_paket || '').trim(),
+      nama_penyedia: String(r.nama_penyedia || '').trim(),
+      satuan_kerja: String(r.nama_satuan_kerja || r.satuan_kerja || '').trim(),
+      metode: String(r.metode_pengadaan || '').trim(),
+      status_paket: String(r.status_paket || '').trim(),
+      sumber: String(r.sumber_transaksi || '').trim(),
+      nilai: nilai
+    });
+  });
+
+  return grouped;
+}
     function getGlobalBaseDate(){
       const now = new Date();
       return new Date(CONFIG.GLOBAL_YEAR || now.getFullYear(), now.getMonth(), 1);
