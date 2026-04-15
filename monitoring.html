@@ -531,7 +531,7 @@
 
     <div class="card">
       <h2>Filter Monitoring</h2>
-      <div class="sub">Tampilan ini contoh struktur final. Nanti logic datanya tinggal disamakan persis dengan aturan yang lu mau.</div>
+      <div class="sub">Tabel utama menampilkan data PERENCANAAN, lalu detail REALISASI muncul saat klik Kode RUP atau tombol Detail.</div>
 
       <div class="grid grid-7">
         <div>
@@ -737,119 +737,18 @@
   </div>
 
   <script>
+    const CONFIG = {
+      XLSX_URL: 'inaproc-monitoring.xlsx',
+      PLANNING_SHEET: 'PERENCANAAN',
+      REALIZATION_SHEET: 'REALISASI',
+      GLOBAL_YEAR: 2026
+    };
+
+    let allRows = [];
+    let filteredRows = [];
     let currentPage = 1;
     let sortWaktuAsc = true;
-
-    const sampleRows = [
-      {
-        kode_rup:'41907405',
-        nama_paket:'Belanja Diklat Kepemimpinan',
-        satuan_kerja:'BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA',
-        pengadaan:'Penyedia',
-        jenis:'Jasa Lainnya',
-        metode:'Pengadaan Langsung',
-        waktu_pemilihan_label:'Desember 2025',
-        pagu:1049070000,
-        recall_paket:0,
-        total_realisasi:0,
-        sisa_pagu:1049070000,
-        persentase:0,
-        status:'Belum Berjalan',
-        progres:'-',
-        waktu:'Melewati',
-        warning:'Belum ada realisasi dan sudah melewati waktu pemilihan 4 bulan.',
-        ket:'Salah Jadwal Pemilihan'
-      },
-      {
-        kode_rup:'63058159',
-        nama_paket:'Satuan Biaya Penginapan Perjalanan Dinas Dalam Negeri Jawa Barat',
-        satuan_kerja:'BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA',
-        pengadaan:'Penyedia',
-        jenis:'Jasa Lainnya',
-        metode:'Dikecualikan',
-        waktu_pemilihan_label:'Mei 2026',
-        pagu:7206000,
-        recall_paket:0,
-        total_realisasi:0,
-        sisa_pagu:7206000,
-        persentase:0,
-        status:'Belum Berjalan',
-        progres:'-',
-        waktu:'Belum',
-        warning:'OK',
-        ket:'-'
-      },
-      {
-        kode_rup:'62385100',
-        nama_paket:'Belanja Iuran Jaminan Kesehatan bagi PPPK',
-        satuan_kerja:'BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA',
-        pengadaan:'Penyedia',
-        jenis:'Jasa Lainnya',
-        metode:'Dikecualikan',
-        waktu_pemilihan_label:'Maret 2026',
-        pagu:2838000,
-        recall_paket:2,
-        total_realisasi:2838000,
-        sisa_pagu:0,
-        persentase:100,
-        status:'Berjalan',
-        progres:'Sesuai Pagu',
-        waktu:'Berjalan',
-        warning:'OK',
-        ket:'-'
-      },
-      {
-        kode_rup:'62384642',
-        nama_paket:'Belanja Pemeliharaan Komputer',
-        satuan_kerja:'BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA',
-        pengadaan:'Penyedia',
-        jenis:'Jasa Lainnya',
-        metode:'Pengadaan Langsung',
-        waktu_pemilihan_label:'Juni 2026',
-        pagu:19710000,
-        recall_paket:1,
-        total_realisasi:21000000,
-        sisa_pagu:-1290000,
-        persentase:106.54,
-        status:'Berjalan',
-        progres:'Melebihi Pagu',
-        waktu:'Belum',
-        warning:'OK',
-        ket:'Salah Jadwal Pemilihan'
-      },
-      {
-        kode_rup:'63058162',
-        nama_paket:'Satuan Biaya Penginapan Perjalanan Dinas Dalam Negeri DKI Jakarta',
-        satuan_kerja:'BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA',
-        pengadaan:'Swakelola',
-        jenis:'Jasa Lainnya',
-        metode:'-',
-        waktu_pemilihan_label:'April 2026',
-        pagu:1984000,
-        recall_paket:1,
-        total_realisasi:600000,
-        sisa_pagu:1384000,
-        persentase:30.24,
-        status:'Berjalan',
-        progres:'-',
-        waktu:'Berjalan',
-        warning:'OK',
-        ket:'-'
-      }
-    ];
-
-    const detailMap = {
-      '62385100': [
-        { kode_paket:'PKT001', nama_paket:'Pembayaran Jaminan Kesehatan Tahap 1', nama_penyedia:'BPJS', satuan_kerja:'BKPSDM', metode:'Dikecualikan', status_paket:'Selesai', sumber:'SPM', nilai:1400000 },
-        { kode_paket:'PKT002', nama_paket:'Pembayaran Jaminan Kesehatan Tahap 2', nama_penyedia:'BPJS', satuan_kerja:'BKPSDM', metode:'Dikecualikan', status_paket:'Selesai', sumber:'SPM', nilai:1438000 }
-      ],
-      '62384642': [
-        { kode_paket:'PKT011', nama_paket:'Pemeliharaan Komputer Triwulan II', nama_penyedia:'CV Maju Teknologi', satuan_kerja:'BKPSDM', metode:'Pengadaan Langsung', status_paket:'Berjalan', sumber:'e-Purchasing', nilai:21000000 }
-      ],
-      '63058162': [
-        { kode_paket:'PKT021', nama_paket:'Penginapan DKI Jakarta Tahap I', nama_penyedia:'Hotel Nusantara', satuan_kerja:'BKPSDM', metode:'Swakelola', status_paket:'Berjalan', sumber:'Manual', nilai:600000 }
-      ]
-    };
+    let groupedRealByKode = {};
 
     function setText(id, val){
       const el = document.getElementById(id);
@@ -865,6 +764,30 @@
         .replace(/'/g, '&#039;');
     }
 
+    function normalizeHeader(text){
+      return String(text || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+    }
+
+    function parseMoney(value){
+      if (value == null || value === '') return 0;
+      if (typeof value === 'number') return value;
+
+      let str = String(value).trim();
+      if (!str || str === '-') return 0;
+
+      str = str.replace(/Rp/gi, '')
+               .replace(/\s/g, '')
+               .replace(/\./g, '')
+               .replace(/,/g, '.')
+               .replace(/[^\d.-]/g, '');
+
+      const num = parseFloat(str);
+      return isNaN(num) ? 0 : num;
+    }
+
     function formatMoney(num){
       return new Intl.NumberFormat('id-ID', {
         minimumFractionDigits: 0,
@@ -877,6 +800,61 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }).format(Number(value || 0)) + '%';
+    }
+
+    function excelDateToJSDate(value){
+      if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), 1);
+
+      if (typeof value === 'number') {
+        const utc_days = Math.floor(value - 25569);
+        const utc_value = utc_days * 86400;
+        const date_info = new Date(utc_value * 1000);
+        return new Date(date_info.getFullYear(), date_info.getMonth(), 1);
+      }
+
+      if (typeof value === 'string' && value.trim()) {
+        const str = String(value).trim();
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          return new Date(d.getFullYear(), d.getMonth(), 1);
+        }
+
+        const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) {
+          const day = Number(m[1]);
+          const month = Number(m[2]) - 1;
+          const year = Number(m[3]);
+          return new Date(year, month, 1);
+        }
+      }
+
+      return null;
+    }
+
+    function monthYearLabel(dateObj){
+      if (!dateObj) return '-';
+      const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      return months[dateObj.getMonth()] + ' ' + dateObj.getFullYear();
+    }
+
+    function normalizeRows(rawRows){
+      return (rawRows || []).map(row => {
+        const out = {};
+        Object.keys(row || {}).forEach(key => {
+          out[normalizeHeader(key)] = row[key];
+        });
+        return out;
+      });
+    }
+
+    function rowsFromSheet(workbook, sheetName){
+      const sheet = workbook.Sheets[sheetName];
+      if (!sheet) return [];
+      return XLSX.utils.sheet_to_json(sheet, {
+        defval: '',
+        raw: true,
+        cellDates: true
+      });
     }
 
     function badgeStatus(v){
@@ -913,6 +891,193 @@
         Juli:7, Agustus:8, September:9, Oktober:10, November:11, Desember:12
       };
       return (Number(tahun || 0) * 100) + (map[bulan] || 0);
+    }
+
+    function groupRealisasi(realRows){
+      const grouped = {};
+
+      realRows.forEach(r => {
+        const kode = String(r.kode_rup || '').trim();
+        if (!kode) return;
+
+        if (!grouped[kode]) {
+          grouped[kode] = {
+            recall_paket: 0,
+            total_realisasi: 0,
+            rows: []
+          };
+        }
+
+        const nilai = parseMoney(
+          r.nilai_realisasi ||
+          r.total_nilai_(rp) ||
+          r.total_nilai ||
+          r.nilai_transaksi ||
+          r.nilai_paket ||
+          0
+        );
+
+        grouped[kode].recall_paket += 1;
+        grouped[kode].total_realisasi += nilai;
+
+        grouped[kode].rows.push({
+          kode_paket: String(r.kode_paket || '').trim(),
+          nama_paket: String(r.nama_paket || '').trim(),
+          nama_penyedia: String(r.nama_penyedia || '').trim(),
+          satuan_kerja: String(r.nama_satuan_kerja || r.satuan_kerja || '').trim(),
+          metode: String(r.metode_pengadaan || '').trim(),
+          status_paket: String(r.status_paket || '').trim(),
+          sumber: String(r.sumber_transaksi || '').trim(),
+          nilai: nilai
+        });
+      });
+
+      return grouped;
+    }
+
+    function getGlobalBaseDate(){
+      const now = new Date();
+      return new Date(CONFIG.GLOBAL_YEAR || now.getFullYear(), now.getMonth(), 1);
+    }
+
+    function buildMonitoringData(perencanaanRows, realisasiRows){
+      const planRows = normalizeRows(perencanaanRows);
+      const realRows = normalizeRows(realisasiRows);
+
+      groupedRealByKode = groupRealisasi(realRows);
+
+      const baseDate = getGlobalBaseDate();
+      const baseYear = baseDate.getFullYear();
+
+      return planRows
+        .filter(r => String(r.kode_rup || '').trim())
+        .map(r => {
+          const kodeRup = String(r.kode_rup || '').trim();
+          const pagu = parseMoney(r.nilai_pagu || r.pagu || 0);
+
+          const real = groupedRealByKode[kodeRup] || {
+            recall_paket: 0,
+            total_realisasi: 0,
+            rows: []
+          };
+
+          const recallPaket = Number(real.recall_paket || 0);
+          const totalRealisasi = Number(real.total_realisasi || 0);
+          const sisaPagu = pagu - totalRealisasi;
+          const persentase = pagu > 0 ? (totalRealisasi / pagu) * 100 : 0;
+
+          const waktuDate = excelDateToJSDate(r.waktu_pemilihan);
+          const waktuLabel = monthYearLabel(waktuDate);
+
+          let status = 'Belum Berjalan';
+          if (recallPaket > 0) {
+            status = 'Berjalan';
+          }
+
+          let progres = '-';
+          if (recallPaket > 0) {
+            if (totalRealisasi > pagu) {
+              progres = 'Melebihi Pagu';
+            } else if (Math.abs(totalRealisasi - pagu) < 1 || persentase >= 99.99) {
+              progres = 'Sesuai Pagu';
+            }
+          }
+
+          let waktu = 'Belum';
+          if (recallPaket > 0) {
+            if (waktuDate && waktuDate <= baseDate) {
+              waktu = 'Berjalan';
+            } else {
+              waktu = 'Belum';
+            }
+          } else {
+            if (waktuDate && waktuDate < baseDate) {
+              waktu = 'Melewati';
+            } else {
+              waktu = 'Belum';
+            }
+          }
+
+          let warning = 'OK';
+          if (recallPaket === 0 && waktu === 'Melewati' && waktuDate) {
+            const diffMonth = (baseDate.getFullYear() - waktuDate.getFullYear()) * 12 + (baseDate.getMonth() - waktuDate.getMonth());
+            warning = 'Belum ada realisasi dan sudah melewati waktu pemilihan ' + diffMonth + ' bulan';
+          }
+
+          let ket = '-';
+          if (waktuDate && waktuDate.getFullYear() < baseYear) {
+            ket = 'Salah Jadwal Pemilihan';
+          }
+          if (recallPaket > 0 && waktuDate && waktuDate > baseDate) {
+            ket = 'Salah Jadwal Pemilihan';
+          }
+
+          return {
+            kode_rup: kodeRup,
+            nama_paket: String(r.nama_paket || '').trim(),
+            satuan_kerja: String(r.nama_satuan_kerja || r.satuan_kerja || '').trim(),
+            pengadaan: String(r.cara_pengadaan || r.pengadaan || '').trim() || '-',
+            jenis: String(r.jenis_pengadaan || '').trim() || '-',
+            metode: String(r.metode_pengadaan || '').trim() || '-',
+            waktu_pemilihan_date: waktuDate,
+            waktu_pemilihan_label: waktuLabel,
+            pagu: pagu,
+            recall_paket: recallPaket,
+            total_realisasi: totalRealisasi,
+            sisa_pagu: sisaPagu,
+            persentase: persentase,
+            status: status,
+            progres: progres,
+            waktu: waktu,
+            warning: warning,
+            ket: ket
+          };
+        });
+    }
+
+    function fillSelect(id, items){
+      const el = document.getElementById(id);
+      const oldVal = el.value;
+      const firstLabel = el.options[0] ? el.options[0].textContent : 'Semua';
+      el.innerHTML = `<option value="">${escapeHtml(firstLabel)}</option>`;
+
+      (items || []).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        el.appendChild(opt);
+      });
+
+      const oldExists = [...el.options].some(opt => opt.value === oldVal);
+      if (oldExists) el.value = oldVal;
+    }
+
+    function buildFilterOptions(rows){
+      fillSelect(
+        'filter_satker',
+        [...new Set(rows.map(r => r.satuan_kerja).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'id'))
+      );
+
+      fillSelect(
+        'filter_pengadaan',
+        [...new Set(rows.map(r => r.pengadaan).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'id'))
+      );
+
+      fillSelect(
+        'filter_metode',
+        [...new Set(rows.map(r => r.metode).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'id'))
+      );
+
+      fillSelect(
+        'filter_jenis',
+        [...new Set(rows.map(r => r.jenis).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'id'))
+      );
+
+      fillSelect(
+        'filter_waktu_pemilihan',
+        [...new Set(rows.map(r => r.waktu_pemilihan_label).filter(v => v && v !== '-'))]
+          .sort((a,b) => getWaktuOrder(a) - getWaktuOrder(b))
+      );
     }
 
     function renderSummary(rows){
@@ -982,8 +1147,94 @@
       return [...rows].sort((a,b) => {
         const oa = getWaktuOrder(a.waktu_pemilihan_label);
         const ob = getWaktuOrder(b.waktu_pemilihan_label);
-        return sortWaktuAsc ? (oa - ob) : (ob - oa);
+
+        if (sortWaktuAsc) {
+          if (oa !== ob) return oa - ob;
+        } else {
+          if (oa !== ob) return ob - oa;
+        }
+
+        return String(a.satuan_kerja || '').localeCompare(String(b.satuan_kerja || ''), 'id');
       });
+    }
+
+    function renderPagination(totalRows, pageSize){
+      const wrap = document.getElementById('pagination');
+      const info = document.getElementById('paginationInfo');
+      wrap.innerHTML = '';
+
+      if (pageSize === 'all') {
+        info.innerText = `${totalRows} data tampil`;
+        return;
+      }
+
+      const size = Number(pageSize || 10);
+      const totalPages = Math.max(1, Math.ceil(totalRows / size));
+
+      const start = totalRows === 0 ? 0 : ((currentPage - 1) * size) + 1;
+      const end = Math.min(currentPage * size, totalRows);
+
+      info.innerText = `${start}-${end} dari ${totalRows} data • Page ${currentPage} / ${totalPages}`;
+
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'page-btn';
+      prevBtn.textContent = 'Prev';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = function(){
+        if (currentPage > 1) {
+          currentPage--;
+          updateTableOnly();
+        }
+      };
+      wrap.appendChild(prevBtn);
+
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+
+      if (currentPage <= 3) endPage = Math.min(totalPages, 5);
+      if (currentPage >= totalPages - 2) startPage = Math.max(1, totalPages - 4);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+        btn.textContent = i;
+        btn.onclick = function(){
+          currentPage = i;
+          updateTableOnly();
+        };
+        wrap.appendChild(btn);
+      }
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'page-btn';
+      nextBtn.textContent = 'Next';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = function(){
+        if (currentPage < totalPages) {
+          currentPage++;
+          updateTableOnly();
+        }
+      };
+      wrap.appendChild(nextBtn);
+    }
+
+    function updateTableOnly(){
+      const pageSize = document.getElementById('filter_page_size').value;
+      let rowsToRender = filteredRows;
+
+      if (pageSize !== 'all') {
+        const size = Number(pageSize || 10);
+        const totalPages = Math.max(1, Math.ceil(filteredRows.length / size));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIndex = (currentPage - 1) * size;
+        const endIndex = startIndex + size;
+        rowsToRender = filteredRows.slice(startIndex, endIndex);
+      }
+
+      renderRows(rowsToRender);
+      renderPagination(filteredRows.length, pageSize);
+      setText('monitoringStatus', `${rowsToRender.length} data tampil.`);
     }
 
     function toggleSortWaktu(){
@@ -994,20 +1245,67 @@
     }
 
     function runMonitoring(){
-      const rows = applySort(sampleRows);
-      renderSummary(rows);
-      renderRows(rows);
-      setText('paginationInfo', rows.length + ' data tampil • Preview struktur monitoring');
-      setText('monitoringStatus', 'Ini masih gambaran struktur tampilan. Kalau struktur ini sudah oke, logic final datanya gue rapihin sesuai aturan lu.');
+      const satker = document.getElementById('filter_satker').value;
+      const pengadaan = document.getElementById('filter_pengadaan').value;
+      const metode = document.getElementById('filter_metode').value;
+      const jenis = document.getElementById('filter_jenis').value;
+      const status = document.getElementById('filter_status').value;
+      const progres = document.getElementById('filter_progres').value;
+      const waktuStatus = document.getElementById('filter_waktu_status').value;
+      const waktuPemilihan = document.getElementById('filter_waktu_pemilihan').value;
+      const keyword = document.getElementById('filter_koderup').value.trim().toLowerCase();
+
+      currentPage = 1;
+
+      filteredRows = applySort(allRows).filter(row => {
+        if (satker && row.satuan_kerja !== satker) return false;
+        if (pengadaan && row.pengadaan !== pengadaan) return false;
+        if (metode && row.metode !== metode) return false;
+        if (jenis && row.jenis !== jenis) return false;
+        if (status && row.status !== status) return false;
+        if (progres && row.progres !== progres) return false;
+        if (waktuStatus && row.waktu !== waktuStatus) return false;
+        if (waktuPemilihan && row.waktu_pemilihan_label !== waktuPemilihan) return false;
+
+        if (keyword) {
+          const haystack = [
+            row.kode_rup,
+            row.nama_paket,
+            row.satuan_kerja,
+            row.pengadaan,
+            row.metode,
+            row.jenis
+          ].join(' ').toLowerCase();
+
+          if (!haystack.includes(keyword)) return false;
+        }
+
+        return true;
+      });
+
+      renderSummary(filteredRows);
+      updateTableOnly();
     }
 
     function resetMonitoring(){
+      document.getElementById('filter_satker').value = '';
+      document.getElementById('filter_pengadaan').value = '';
+      document.getElementById('filter_metode').value = '';
+      document.getElementById('filter_jenis').value = '';
+      document.getElementById('filter_status').value = '';
+      document.getElementById('filter_progres').value = '';
+      document.getElementById('filter_waktu_status').value = '';
+      document.getElementById('filter_waktu_pemilihan').value = '';
+      document.getElementById('filter_koderup').value = '';
+      document.getElementById('filter_page_size').value = '10';
       runMonitoring();
     }
 
     function openDetailModal(kodeRup){
-      const row = sampleRows.find(r => String(r.kode_rup) === String(kodeRup));
+      const row = allRows.find(r => String(r.kode_rup) === String(kodeRup));
       if (!row) return;
+
+      const detailRows = (groupedRealByKode[kodeRup] && groupedRealByKode[kodeRup].rows) ? groupedRealByKode[kodeRup].rows : [];
 
       setText('detailTitle', 'Detail Kode RUP ' + row.kode_rup);
       setText('detailKodeRup', row.kode_rup);
@@ -1023,15 +1321,14 @@
 
       const tbody = document.getElementById('detailBody');
       const empty = document.getElementById('detailEmpty');
-      const rows = detailMap[kodeRup] || [];
       tbody.innerHTML = '';
 
-      if (!rows.length) {
+      if (!detailRows.length) {
         empty.style.display = 'block';
         tbody.innerHTML = '<tr><td colspan="8">Belum ada data realisasi.</td></tr>';
       } else {
         empty.style.display = 'none';
-        rows.forEach(item => {
+        detailRows.forEach(item => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${escapeHtml(item.kode_paket)}</td>
@@ -1060,7 +1357,37 @@
       }
     }
 
-    runMonitoring();
+    async function loadMonitoringData(){
+      try {
+        setText('monitoringStatus', 'Memuat file Excel monitoring...');
+
+        const res = await fetch(CONFIG.XLSX_URL);
+        if (!res.ok) {
+          throw new Error('File Excel tidak ditemukan: ' + CONFIG.XLSX_URL);
+        }
+
+        const arrayBuffer = await res.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+
+        const perencanaanRows = rowsFromSheet(workbook, CONFIG.PLANNING_SHEET);
+        const realisasiRows = rowsFromSheet(workbook, CONFIG.REALIZATION_SHEET);
+
+        allRows = buildMonitoringData(perencanaanRows, realisasiRows);
+        buildFilterOptions(allRows);
+        setText('sortWaktuLabel', sortWaktuAsc ? 'Terlama → Terbaru' : 'Terbaru → Terlama');
+        setText('sortWaktuArrow', sortWaktuAsc ? '↑' : '↓');
+        runMonitoring();
+      } catch (err) {
+        console.error(err);
+        setText('monitoringStatus', 'Gagal memuat data monitoring: ' + (err.message || String(err)));
+        renderRows([]);
+        renderSummary([]);
+        document.getElementById('pagination').innerHTML = '';
+        document.getElementById('paginationInfo').innerText = '0 data tampil';
+      }
+    }
+
+    loadMonitoringData();
   </script>
 </body>
 </html>
