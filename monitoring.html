@@ -1421,12 +1421,15 @@ function toggleSortRealisasi(){
   runMonitoring();
 }
 
-    function toggleSortWaktu(){
-      sortWaktuAsc = !sortWaktuAsc;
-      setText('sortWaktuLabel', sortWaktuAsc ? 'Terlama → Terbaru' : 'Terbaru → Terlama');
-      setText('sortWaktuArrow', sortWaktuAsc ? '↑' : '↓');
-      runMonitoring();
-    }
+function toggleSortWaktu(){
+  activeSort = 'waktu';
+  sortWaktuAsc = !sortWaktuAsc;
+
+  setText('sortWaktuLabel', sortWaktuAsc ? 'Terlama → Terbaru' : 'Terbaru → Terlama');
+  setText('sortWaktuArrow', sortWaktuAsc ? '↑' : '↓');
+
+  runMonitoring();
+}
 
     function runMonitoring(){
       const satker = document.getElementById('filter_satker').value;
