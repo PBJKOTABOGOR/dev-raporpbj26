@@ -663,7 +663,12 @@
                   <span id="sortWaktuArrow">↑</span>
                 </button>
               </th>
-              <th>Pagu RUP</th>
+              <th>
+  <button class="sort-btn" onclick="toggleSortPagu()">
+    Pagu RUP
+    <span id="sortPaguArrow">↑</span>
+  </button>
+</th>
               <th>Total Realisasi</th>
               <th>
                 <button class="sort-btn" onclick="toggleSortRealisasi()">
@@ -807,6 +812,7 @@
     let filteredRows = [];
     let currentPage = 1;
     let sortWaktuAsc = true;
+    let sortPaguAsc = true;
     let sortRealisasiAsc = true;
     let activeSort = 'waktu'; 
     let groupedRealByKode = {};
@@ -1312,13 +1318,18 @@
 function applySort(rows){
   return [...rows].sort((a,b) => {
 
+    if (activeSort === 'pagu') {
+      return sortPaguAsc
+        ? a.pagu - b.pagu
+        : b.pagu - a.pagu;
+    }
+
     if (activeSort === 'realisasi') {
       return sortRealisasiAsc 
         ? a.persentase - b.persentase
         : b.persentase - a.persentase;
     }
 
-    // default: waktu
     const oa = getWaktuOrder(a.waktu_pemilihan_label);
     const ob = getWaktuOrder(b.waktu_pemilihan_label);
 
@@ -1427,6 +1438,16 @@ function toggleSortWaktu(){
 
   setText('sortWaktuLabel', sortWaktuAsc ? 'Terlama → Terbaru' : 'Terbaru → Terlama');
   setText('sortWaktuArrow', sortWaktuAsc ? '↑' : '↓');
+
+  runMonitoring();
+}
+
+  function toggleSortPagu(){
+  activeSort = 'pagu';
+  sortPaguAsc = !sortPaguAsc;
+
+  const arrow = document.getElementById("sortPaguArrow");
+  arrow.textContent = sortPaguAsc ? "↑" : "↓";
 
   runMonitoring();
 }
