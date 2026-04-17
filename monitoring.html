@@ -1411,12 +1411,15 @@ function applySort(rows){
       setText('monitoringStatus', `${rowsToRender.length} data tampil.`);
     }
 
-    function toggleSortRealisasi(){
-      sortAscRealisasi = !sortAscRealisasi;
-      const arrow = document.getElementById("sortRealisasiArrow");
-      arrow.textContent = sortAscRealisasi ? "↑" : "↓";
-      runMonitoring();
-    }
+function toggleSortRealisasi(){
+  activeSort = 'realisasi';
+  sortRealisasiAsc = !sortRealisasiAsc;
+
+  const arrow = document.getElementById("sortRealisasiArrow");
+  arrow.textContent = sortRealisasiAsc ? "↑" : "↓";
+
+  runMonitoring();
+}
 
     function toggleSortWaktu(){
       sortWaktuAsc = !sortWaktuAsc;
