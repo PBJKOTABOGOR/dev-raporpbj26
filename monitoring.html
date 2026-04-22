@@ -974,57 +974,57 @@
     return summary;
   }
 
-  function groupRealisasi(realRows) {
-    const grouped = {};
+function groupRealisasi(realRows) {
+  const grouped = {};
 
-    realRows.forEach(r => {
-      const kode = String(r.kode_rup || '').trim();
-      if (!kode) return;
+  realRows.forEach(r => {
+    const kode = String(r.kode_rup || '').trim();
+    if (!kode) return;
 
-      if (!grouped[kode]) {
-        grouped[kode] = {
-          recall_paket: 0,
-          total_realisasi: 0,
-          rows: [],
-          first_order: null
-        };
+    if (!grouped[kode]) {
+      grouped[kode] = {
+        recall_paket: 0,
+        total_realisasi: 0,
+        rows: [],
+        first_order: null
+      };
+    }
+
+    const nilai = parseMoney(
+      r.nilai_realisasi ||
+      r['nilai_(rp)'] ||
+      r.total_nilai ||
+      r['total_nilai_(rp)'] ||
+      0
+    );
+
+    const waktuOrder = getWaktuOrder(r.waktu_pemilihan || '');
+
+    grouped[kode].recall_paket += 1;
+    grouped[kode].total_realisasi += nilai;
+
+    if (waktuOrder > 0) {
+      if (!grouped[kode].first_order || waktuOrder < grouped[kode].first_order) {
+        grouped[kode].first_order = waktuOrder;
       }
+    }
 
-      const nilai = parseMoney(
-        r.nilai_realisasi ||
-        r.nilai_(rp) ||
-        r.total_nilai ||
-        r.total_nilai_(rp) ||
-        0
-      );
-
-      const waktuOrder = getWaktuOrder(r.waktu_pemilihan || '');
-
-      grouped[kode].recall_paket += 1;
-      grouped[kode].total_realisasi += nilai;
-
-      if (waktuOrder > 0) {
-        if (!grouped[kode].first_order || waktuOrder < grouped[kode].first_order) {
-          grouped[kode].first_order = waktuOrder;
-        }
-      }
-
-      grouped[kode].rows.push({
-        kode_paket: String(r.kode_paket || '').trim(),
-        nama_paket: String(r.nama_paket || '').trim(),
-        nama_penyedia: String(r.nama_penyedia || '').trim(),
-        satuan_kerja: String(r.nama_satuan_kerja || '').trim(),
-        metode: String(r.metode_pengadaan || '').trim(),
-        status_paket: String(r.status_paket || '').trim(),
-        sumber_transaksi: String(r.sumber_transaksi || '').trim(),
-        bast: String(r.bast || '').trim(),
-        nilai: nilai
-      });
+    grouped[kode].rows.push({
+      kode_paket: String(r.kode_paket || '').trim(),
+      nama_paket: String(r.nama_paket || '').trim(),
+      nama_penyedia: String(r.nama_penyedia || '').trim(),
+      satuan_kerja: String(r.nama_satuan_kerja || '').trim(),
+      metode: String(r.metode_pengadaan || '').trim(),
+      status_paket: String(r.status_paket || '').trim(),
+      sumber_transaksi: String(r.sumber_transaksi || '').trim(),
+      bast: String(r.bast || '').trim(),
+      nilai: nilai
     });
+  });
 
-    return grouped;
-  }
-
+  return grouped;
+}
+  
   function buildMonitoringData(perencanaanRows, realisasiRows) {
     const planRows = normalizeRows(perencanaanRows);
     const realRows = normalizeRows(realisasiRows);
